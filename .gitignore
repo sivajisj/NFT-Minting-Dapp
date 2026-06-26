@@ -1,0 +1,40 @@
+# Rust/Cargo
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Solana
+.anchor/
+.solana/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Keys
+**/id.json
+**/*-keypair.json
+
+# Locks (use yarn.lock or package-lock.json, not both)
+yarn.lock
+Cargo.lock
+
+# Node
+**/node_modules/
