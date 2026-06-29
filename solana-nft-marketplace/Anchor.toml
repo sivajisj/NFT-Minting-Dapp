@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-solana_nft_marketplace = "4ACXJjwsV5gWRFZTzS7AYpEtf8r977RrD8QEZQgwP39x"
+solana_nft_marketplace = "3TphjLz52Xv9a2sW9C56dA31ouXZRkwdaPhhjJZWYjvK"
 
 [provider]
 cluster = "localnet"
