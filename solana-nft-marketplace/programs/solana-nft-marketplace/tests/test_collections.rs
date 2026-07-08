@@ -12,7 +12,7 @@ mod tests {
     }
 
     fn system_program_id() -> APubkey {
-        APubkey::from([0u8; 32])
+        anchor_lang::system_program::ID
     }
 
     fn setup() -> (LiteSVM, Keypair) {
@@ -21,7 +21,7 @@ mod tests {
         let bytes = include_bytes!(
             "../../../target/deploy/solana_nft_marketplace.so"
         );
-        svm.add_program(program_id().to_bytes(), bytes);
+        let _ = svm.add_program(program_id().to_bytes(), bytes);
         svm.airdrop(
             &authority.pubkey().to_bytes().into(),
             5_000_000_000,
