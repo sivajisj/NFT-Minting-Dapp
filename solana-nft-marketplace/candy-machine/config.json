@@ -1,0 +1,35 @@
+{
+  "tokenStandard": "nft",
+  "number": 10,
+  "symbol": "SNFT",
+  "sellerFeeBasisPoints": 500,
+  "isMutable": true,
+  "isSequential": false,
+  "ruleSet": null,
+  "creators": [
+    {
+      "address": "9QGL3wPd97tiRj6bV7WThNx3eAkqhcTNhpNrgM4nk17D",
+      "share": 100
+    }
+  ],
+  "uploadMethod": "bundlr",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "cluster": "devnet",
+  "guards": {
+    "default": {
+      "botTax": {
+        "value": 0.01,
+        "lastInstruction": true
+      },
+      "solPayment": {
+        "value": 0.1,
+        "destination": "9QGL3wPd97tiRj6bV7WThNx3eAkqhcTNhpNrgM4nk17D"
+      },
+      "mintLimit": {
+        "id": 1,
+        "limit": 2
+      }
+    },
+    "groups": null
+  }
+}

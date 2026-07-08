@@ -1,0 +1,6 @@
+[
+  {
+    "path": "assets/collection.json",
+    "error": "Name exceeds 32 chars."
+  }
+]

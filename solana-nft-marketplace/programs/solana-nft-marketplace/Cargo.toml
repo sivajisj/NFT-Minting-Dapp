@@ -24,6 +24,7 @@ custom-panic = []
 [dependencies]
 anchor-lang = { version = "1.0.1", features = ["init-if-needed"] }
 anchor-spl = { version = "1.0.1", features = ["token", "associated_token", "metadata"] }
+mpl-bubblegum = { version = "3.0.0" }
 [dev-dependencies]
 litesvm = "0.10.0"
 solana-keypair = "3.1.2"

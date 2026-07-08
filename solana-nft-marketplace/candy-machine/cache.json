@@ -1,0 +1,98 @@
+{
+  "program": {
+    "candyMachine": "FGnar8nZkoB7crmvbs29fVuQGu789cHBX47BQiWUCRc3",
+    "candyGuard": "",
+    "candyMachineCreator": "H7Sj1Eb8pkU4NPdA5EYd45Ey4Hgs5Rtet5XXnddE5akD",
+    "collectionMint": "38zqjmtPeDGteueCPKR7nyzwbHmGPmMhgLEnXytakc5w"
+  },
+  "items": {
+    "-1": {
+      "name": "SNFT Marketplace Collection",
+      "image_hash": "ed3085402bf37f08478bdf4b37507c0e7fbfb7c6f21ed578ed9ec60d968471f4",
+      "image_link": "https://gateway.irys.xyz/329oEp2eErZHdSYkfTzzWCxDsqifrKH5n9HbqHAGQwHu?ext=png",
+      "metadata_hash": "351f83c250445bc0b5601289fed59c435851579e048a28bf9c8e3063f6496099",
+      "metadata_link": "https://gateway.irys.xyz/H2XUGfqnYS3ifc2NTEZbCdenTtSKfbhYDyeReCJQftRg",
+      "onChain": true
+    },
+    "0": {
+      "name": "Solana NFT Marketplace #0",
+      "image_hash": "466e22ea078aa0e85d86aeb9bd0132a52ccc8c63edc47feda4114b5a6afbcc43",
+      "image_link": "https://gateway.irys.xyz/Dmyhf2Fg3YrkD3UWPP523RMVvz1Qg14CpRB8VLj9n4sQ?ext=png",
+      "metadata_hash": "c1226219ba8e440b5f3fdb1c9c8a4e4905504c9e82f4f20c52fa41f3052de874",
+      "metadata_link": "https://gateway.irys.xyz/FQZtsG2zAkK2DieyLCpigwfwhUQzgQja9qEXfEJ3J4D6",
+      "onChain": true
+    },
+    "1": {
+      "name": "Solana NFT Marketplace #1",
+      "image_hash": "ab5793d1a38134ccd98fd0d079e5dd35d8edcf503e321c8ca4800fa7604ec8b9",
+      "image_link": "https://gateway.irys.xyz/6nhtre4Nk32Uw3NbK9D2nm75L1WLHCKjFHhgJ4aBrv4j?ext=png",
+      "metadata_hash": "04aae95e5a7db8b8385514c2b10e911299909b5fc26bb6af1a94cf29397839ee",
+      "metadata_link": "https://gateway.irys.xyz/86nifiPs8SoBJZ7eAL127JWQMsS638XxA24tvVLbZXcZ",
+      "onChain": true
+    },
+    "2": {
+      "name": "Solana NFT Marketplace #2",
+      "image_hash": "a072365c17843ce4ccb5bfa6f03c1ae8bc7abfa1cc62c6a44a76b934f7a388a5",
+      "image_link": "https://gateway.irys.xyz/3kcRmJT6ACTh6B2jnG1ffq9yK8MmDwi9wyhKpAwHqgBQ?ext=png",
+      "metadata_hash": "cde40f27b4a0cb980f35490f834d119fd1616de174a4078a7bc1383992059aff",
+      "metadata_link": "https://gateway.irys.xyz/6i8vP3wd9GP2zuF1bjJaWJrhauYEiLVSjNB4U1hZ6ADf",
+      "onChain": true
+    },
+    "3": {
+      "name": "Solana NFT Marketplace #3",
+      "image_hash": "8477f19adef0cc79a68a4c599997c439c7987eea037df3b472470f1c029ce352",
+      "image_link": "https://gateway.irys.xyz/Fk1jZepGLs4MxRw27T2UzL1YGBfjYJ39dSrNxodmRMTd?ext=png",
+      "metadata_hash": "bbb05b73241136ee69d04511d46010e19502bb001b99e3de22e4a36a1d440788",
+      "metadata_link": "https://gateway.irys.xyz/BRuSP5Y1nUJhZkN3MbSkogpB54veAvfPE7UnjmZwGe12",
+      "onChain": true
+    },
+    "4": {
+      "name": "Solana NFT Marketplace #4",
+      "image_hash": "ff270881123f45776225b8a19f446af68789e8f518b940ce6dc38ebc4dceec79",
+      "image_link": "https://gateway.irys.xyz/6sjUKXKEmART4ohWMjmzNZhjcJbDu16jgoMR3M48tbyi?ext=png",
+      "metadata_hash": "4f6c60fd3b2ddd9966a157738e22b0f709f59d413b2bcb8c13a824a6a1071ae2",
+      "metadata_link": "https://gateway.irys.xyz/EkVwVufjh1f3CWmNHfMGRKki6rgrJeTfiRBEVZXz93qo",
+      "onChain": true
+    },
+    "5": {
+      "name": "Solana NFT Marketplace #5",
+      "image_hash": "2e8255c6388cef4d2fcab92afe4de57aed7a11dde439b93b79f450bf08c664fd",
+      "image_link": "https://gateway.irys.xyz/EsUrcZ9YZAUWsxX9kb6MoVvxXv7QmpYbV8NDGJnfxBsb?ext=png",
+      "metadata_hash": "38e1bd44c527ef275b83e5edb31026b1f891cb7242355faf5f547832af7f2ba5",
+      "metadata_link": "https://gateway.irys.xyz/BF81o5msrddfjZe6ExA3kAaFApKRtUeUtaSNVTLjL4f1",
+      "onChain": true
+    },
+    "6": {
+      "name": "Solana NFT Marketplace #6",
+      "image_hash": "b1590ad12ed7cc001719da05046c276e20d7a5d1b4fae9d20f075405b1f728fc",
+      "image_link": "https://gateway.irys.xyz/HGZzpRQi21sqrohCqw9AiDnE8PXauGhfgGiGnRLAdtfn?ext=png",
+      "metadata_hash": "e469d967323599c9427c704bd98ef74b1609b37fc44ca96b0519b6c060b961cb",
+      "metadata_link": "https://gateway.irys.xyz/7bTzEtY4FXrWpegaWF7ENo7adtpCBhjAK4pMmtuxKR1d",
+      "onChain": true
+    },
+    "7": {
+      "name": "Solana NFT Marketplace #7",
+      "image_hash": "2cf4554272620e54231716e9bed9c21076f289db3f933df29b36294a93f36ddf",
+      "image_link": "https://gateway.irys.xyz/EjAYEf23Qto5u9c7fRLqtmvPqJoepHhebi1xe5yxQpeG?ext=png",
+      "metadata_hash": "2fb674a674207d4f523d761d1145f319e83dc6dda66044d98928e1f2808700f0",
+      "metadata_link": "https://gateway.irys.xyz/qLhwgDYg72nqTfQdwrNyeGnxoPgS4MsZfFbxUxzqdAc",
+      "onChain": true
+    },
+    "8": {
+      "name": "Solana NFT Marketplace #8",
+      "image_hash": "1e00b343f0e3de6933b0cbab0a319ace73eec97aa2da10795f609265b279a6d8",
+      "image_link": "https://gateway.irys.xyz/HQjovVfKh4Wp8KsNC6R8GAavimTFbM5Tho7nXYuNyGPC?ext=png",
+      "metadata_hash": "f3986966e10790f2480caa96049e7e698ba733737c7d13dd1dba661dcf09c050",
+      "metadata_link": "https://gateway.irys.xyz/AaxxDEPp3WnNMRZycfNHr78U4nPxq6ZNd4VKwKE1Ectz",
+      "onChain": true
+    },
+    "9": {
+      "name": "Solana NFT Marketplace #9",
+      "image_hash": "fe1c653fddd2a59b1c54b732572081dce351a1f7ddef9acad5227c75ddca5ee3",
+      "image_link": "https://gateway.irys.xyz/8TT4ZyDRUbVnzKLfdUAun7sti8GCT635Giy1aqaMBDYC?ext=png",
+      "metadata_hash": "ea23b06394c5bf92f90a7b9886c8a9972936a5ef82d5f1fe840ec0f8ed3def86",
+      "metadata_link": "https://gateway.irys.xyz/BhaYQbdG7oYFDNZSSY5jmEQPA8VNZSLCTi8q8yRWy6Vi",
+      "onChain": true
+    }
+  }
+}

@@ -14,8 +14,24 @@ use anchor_spl::{
     },
     token::{self, Mint, Token, TokenAccount},
 };
-
+use mpl_bubblegum::{
+    instructions::MintToCollectionV1CpiBuilder,
+    types::{
+        Collection as BubblegumCollection,
+        Creator as BubblegumCreator,
+        MetadataArgs,
+        TokenProgramVersion,
+        TokenStandard,  
+    },
+};
 declare_id!("3TphjLz52Xv9a2sW9C56dA31ouXZRkwdaPhhjJZWYjvK");
+
+// Well-known, permanent program IDs. Hardcoded to avoid depending on the
+// Solana 1.16-era spl-account-compression / spl-noop crates, which conflict
+// with the modern (zeroize >= 1.5) toolchain.
+pub const SPL_NOOP_ID: Pubkey = pubkey!("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV");
+pub const SPL_ACCOUNT_COMPRESSION_ID: Pubkey =
+    pubkey!("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK");
 
 #[program]
 pub mod solana_nft_marketplace {
@@ -136,6 +152,137 @@ pub mod solana_nft_marketplace {
         Ok(())
     }
 
+    /// Creates the Merkle tree that will hold all compressed NFTs.
+    /// Must be called before any cNFTs can be minted.
+    pub fn create_tree(
+        ctx: Context<CreateTree>,
+        max_depth: u32,
+        max_buffer_size: u32
+    )-> Result<()> {
+        let config = &mut ctx.accounts.collection_config;
+
+        // before creating make sure it is not exist already
+        require!(config.tree_address == Pubkey::default(),
+        MarketplaceError::TreeAlreadyCreated
+        );
+
+        // CPI into SPL Account Compression via Bubblegum
+        // Bubblegum handles the tree_config account creation
+        // SPL Compression handles the actual Merkle tree account
+        mpl_bubblegum::instructions::CreateTreeConfigCpiBuilder::new(
+            &ctx.accounts.bubblegum_program.to_account_info()
+
+        ).tree_config(&ctx.accounts.tree_config.to_account_info())
+        .merkle_tree(&ctx.accounts.merkle_tree.to_account_info())
+        .payer(&ctx.accounts.authority.to_account_info())
+        .tree_creator(&ctx.accounts.authority.to_account_info())
+        .log_wrapper(&ctx.accounts.log_wrapper.to_account_info())
+        .compression_program(&ctx.accounts.compression_program.to_account_info())
+        .system_program(&ctx.accounts.system_program.to_account_info())
+        .max_depth(max_depth)
+        .max_buffer_size(max_buffer_size)
+        .invoke()?;
+
+        config.tree_address = ctx.accounts.merkle_tree.key();
+
+
+        msg!(
+            "Merkle tree created: {}. Depth: {}. Buffer: {}.",
+            ctx.accounts.merkle_tree.key(),
+            max_depth,
+            max_buffer_size
+        );
+
+        Ok(())
+    }
+
+    //Mint Compressed NFT intpo the collections Merkle tree
+    pub fn mint_compressed_nft(
+        ctx: Context<MintCompressedNft>,
+        name: String,
+        symbol: String,
+        uri: String,
+    )-> Result<()>{
+
+        let config = &mut ctx.accounts.collection_config;
+        require!(config.is_active, MarketplaceError::CollectionInactive);
+        require!(!uri.is_empty(), MarketplaceError::InvalidUri);
+        require!(
+            config.tree_address != Pubkey::default(),
+            MarketplaceError::TreeNotCreated
+        );
+        require!(
+            config.collection_mint != Pubkey::default(),
+            MarketplaceError::CollectionNotCreated
+        );
+
+        //Build the metadata for this compresses NFT
+        let metadata_args = MetadataArgs {
+            name: name.clone(),
+            symbol: symbol.clone(),
+            uri: uri.clone(),
+          seller_fee_basis_points: config.royalty_bps,
+            primary_sale_happened:   false,
+            is_mutable:              true,
+            edition_nonce:           None,
+            token_standard:          Some(TokenStandard::NonFungible),
+            collection: Some(BubblegumCollection {
+                key:      config.collection_mint,
+                verified: false, // Bubblegum verifies this during the CPI
+            }),
+            uses:          None,
+            token_program_version: TokenProgramVersion::Original,
+            creators: vec![BubblegumCreator {
+                address:  ctx.accounts.authority.key(),
+                verified: true,
+                share:    100,
+            }],
+        };
+
+         // CPI into Bubblegum mint_to_collection_v1
+        // This simultaneously:
+        // 1. Adds a leaf to the Merkle tree
+        // 2. Verifies the NFT belongs to the collection
+        // 3. Emits a structured log event for indexers
+        MintToCollectionV1CpiBuilder::new(
+            &ctx.accounts.bubblegum_program.to_account_info(),
+        )
+        .tree_config(&ctx.accounts.tree_config.to_account_info())
+        .leaf_owner(&ctx.accounts.leaf_owner.to_account_info())
+        .leaf_delegate(&ctx.accounts.leaf_owner.to_account_info())
+        .merkle_tree(&ctx.accounts.merkle_tree.to_account_info())
+        .payer(&ctx.accounts.authority.to_account_info())
+        .tree_creator_or_delegate(&ctx.accounts.authority.to_account_info())
+        .collection_authority(&ctx.accounts.authority.to_account_info())
+        // None: the collection authority is the direct update authority, so
+        // there is no legacy Token Metadata authority-record PDA to pass.
+        .collection_authority_record_pda(None)
+        .collection_mint(&ctx.accounts.collection_mint.to_account_info())
+        .collection_metadata(&ctx.accounts.collection_metadata.to_account_info())
+        .collection_edition(
+            &ctx.accounts.collection_master_edition.to_account_info()
+        )
+        .bubblegum_signer(&ctx.accounts.bubblegum_signer.to_account_info())
+        .log_wrapper(&ctx.accounts.log_wrapper.to_account_info())
+        .compression_program(&ctx.accounts.compression_program.to_account_info())
+        .token_metadata_program(
+            &ctx.accounts.token_metadata_program.to_account_info()
+        )
+        .system_program(&ctx.accounts.system_program.to_account_info())
+        .metadata(metadata_args)
+        .invoke()?;
+
+        // Update collection state
+        config.total_minted += 1;
+
+        msg!(
+            "Compressed NFT minted. Owner: {}. Total: {}.",
+            ctx.accounts.leaf_owner.key(),
+            config.total_minted
+        );
+
+        Ok(())
+    }
     /// Mints a member NFT and verifies it belongs to the collection.
     pub fn mint_nft(
         ctx: Context<MintNft>,
@@ -273,7 +420,6 @@ pub struct CreateCollectionNft<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
-    /// The collection's mint account — new keypair
     #[account(
         init,
         payer = authority,
@@ -283,7 +429,6 @@ pub struct CreateCollectionNft<'info> {
     )]
     pub collection_mint: Account<'info, Mint>,
 
-    /// Metaplex metadata PDA for the collection NFT
     /// CHECK: Validated by Metaplex via CPI
     #[account(
         mut,
@@ -297,7 +442,6 @@ pub struct CreateCollectionNft<'info> {
     )]
     pub collection_metadata: UncheckedAccount<'info>,
 
-    /// Authority's ATA for collection mint
     #[account(
         init_if_needed,
         payer = authority,
@@ -306,7 +450,6 @@ pub struct CreateCollectionNft<'info> {
     )]
     pub authority_token_account: Account<'info, TokenAccount>,
 
-    /// Collection config — updated with collection_mint address
     #[account(
         mut,
         seeds = [b"config", authority.key().as_ref()],
@@ -324,11 +467,157 @@ pub struct CreateCollectionNft<'info> {
 }
 
 #[derive(Accounts)]
+pub struct CreateTree<'info> {
+    /// Collection authority — pays for tree account
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    /// Bubblegum tree config PDA
+    /// CHECK: Validated by Bubblegum via CPI
+    #[account(
+        mut,
+        seeds = [merkle_tree.key().as_ref()],
+        bump,
+        seeds::program = bubblegum_program.key(),
+    )]
+    pub tree_config: UncheckedAccount<'info>,
+
+    /// The actual Merkle tree account — must be a fresh keypair
+    /// CHECK: Validated by SPL Account Compression via CPI
+    #[account(mut)]
+    pub merkle_tree: UncheckedAccount<'info>,
+
+    /// Collection config — updated with tree address
+    #[account(
+        mut,
+        seeds = [b"config", authority.key().as_ref()],
+        bump = collection_config.bump,
+        constraint = collection_config.authority == authority.key()
+            @ MarketplaceError::UnauthorizedMinter,
+    )]
+    pub collection_config: Account<'info, CollectionConfig>,
+
+    /// CHECK: Bubblegum program
+    #[account(address = mpl_bubblegum::ID)]
+    pub bubblegum_program: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Noop program for logging
+    #[account(address = SPL_NOOP_ID)]
+    pub log_wrapper: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Account Compression program
+    #[account(address = SPL_ACCOUNT_COMPRESSION_ID)]
+    pub compression_program: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MintCompressedNft<'info> {
+    /// Collection authority — signs the mint
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    /// Who receives the cNFT
+    /// CHECK: Any valid pubkey can receive
+    pub leaf_owner: UncheckedAccount<'info>,
+
+    /// Bubblegum tree config
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        mut,
+        seeds = [merkle_tree.key().as_ref()],
+        bump,
+        seeds::program = bubblegum_program.key(),
+    )]
+    pub tree_config: UncheckedAccount<'info>,
+
+    /// The Merkle tree
+    /// CHECK: Validated by SPL Compression
+    #[account(
+        mut,
+        constraint = merkle_tree.key() == collection_config.tree_address
+            @ MarketplaceError::InvalidTree,
+    )]
+    pub merkle_tree: UncheckedAccount<'info>,
+
+    /// Collection mint
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        constraint = collection_mint.key() == collection_config.collection_mint
+            @ MarketplaceError::InvalidCollectionMint,
+    )]
+    pub collection_mint: UncheckedAccount<'info>,
+
+    /// Collection metadata PDA
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        mut,
+        seeds = [
+            b"metadata",
+            token_metadata_program.key().as_ref(),
+            collection_mint.key().as_ref(),
+        ],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    pub collection_metadata: UncheckedAccount<'info>,
+
+    /// Collection master edition
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        mut,
+        seeds = [
+            b"metadata",
+            token_metadata_program.key().as_ref(),
+            collection_mint.key().as_ref(),
+            b"edition",
+        ],
+        bump,
+        seeds::program = token_metadata_program.key(),
+    )]
+    pub collection_master_edition: UncheckedAccount<'info>,
+
+    /// Bubblegum signer PDA
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        seeds = [b"collection_cpi"],
+        bump,
+        seeds::program = bubblegum_program.key(),
+    )]
+    pub bubblegum_signer: UncheckedAccount<'info>,
+
+    /// Collection config
+    #[account(
+        mut,
+        seeds = [b"config", authority.key().as_ref()],
+        bump = collection_config.bump,
+        constraint = collection_config.authority == authority.key()
+            @ MarketplaceError::UnauthorizedMinter,
+    )]
+    pub collection_config: Account<'info, CollectionConfig>,
+
+    /// CHECK: Bubblegum program
+    #[account(address = mpl_bubblegum::ID)]
+    pub bubblegum_program: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Noop for logging
+    #[account(address = SPL_NOOP_ID)]
+    pub log_wrapper: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Account Compression
+    #[account(address = SPL_ACCOUNT_COMPRESSION_ID)]
+    pub compression_program: UncheckedAccount<'info>,
+
+    pub token_metadata_program: Program<'info, Metadata>,
+    pub system_program:         Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct MintNft<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
 
-    /// Member NFT mint — new keypair
     #[account(
         init,
         payer = creator,
@@ -338,7 +627,6 @@ pub struct MintNft<'info> {
     )]
     pub mint: Account<'info, Mint>,
 
-    /// Metaplex metadata PDA for this member NFT
     /// CHECK: Validated by Metaplex via CPI
     #[account(
         mut,
@@ -352,7 +640,6 @@ pub struct MintNft<'info> {
     )]
     pub metadata: UncheckedAccount<'info>,
 
-    /// Creator's ATA for member NFT
     #[account(
         init_if_needed,
         payer = creator,
@@ -361,7 +648,6 @@ pub struct MintNft<'info> {
     )]
     pub creator_token_account: Account<'info, TokenAccount>,
 
-    /// Collection mint — for verification
     /// CHECK: Validated by Metaplex via CPI
     #[account(
         mut,
@@ -370,7 +656,6 @@ pub struct MintNft<'info> {
     )]
     pub collection_mint: UncheckedAccount<'info>,
 
-    /// Collection metadata PDA
     /// CHECK: Validated by Metaplex via CPI
     #[account(
         mut,
@@ -384,7 +669,6 @@ pub struct MintNft<'info> {
     )]
     pub collection_metadata: UncheckedAccount<'info>,
 
-    /// Collection master edition PDA
     /// CHECK: Validated by Metaplex via CPI
     #[account(
         mut,
@@ -399,7 +683,6 @@ pub struct MintNft<'info> {
     )]
     pub collection_master_edition: UncheckedAccount<'info>,
 
-    /// Collection config
     #[account(
         mut,
         seeds = [b"config", creator.key().as_ref()],
@@ -422,17 +705,16 @@ pub struct MintNft<'info> {
 
 #[account]
 pub struct CollectionConfig {
-    pub authority:        Pubkey,
-    pub royalty_bps:      u16,
-    pub tree_address:     Pubkey,
-    pub collection_mint:  Pubkey,  // ← NEW: stores collection NFT mint
-    pub total_minted:     u64,
-    pub is_active:        bool,
-    pub bump:             u8,
+    pub authority:       Pubkey,
+    pub royalty_bps:     u16,
+    pub tree_address:    Pubkey,
+    pub collection_mint: Pubkey,
+    pub total_minted:    u64,
+    pub is_active:       bool,
+    pub bump:            u8,
 }
 
 impl CollectionConfig {
-    // 8 + 32 + 2 + 32 + 32 + 8 + 1 + 1 = 116
     pub const SIZE: usize = 8 + 32 + 2 + 32 + 32 + 8 + 1 + 1;
 }
 
@@ -462,4 +744,13 @@ pub enum MarketplaceError {
 
     #[msg("Invalid collection mint address")]
     InvalidCollectionMint,
+
+    #[msg("Merkle tree already created")]
+    TreeAlreadyCreated,
+
+    #[msg("Merkle tree must be created before minting compressed NFTs")]
+    TreeNotCreated,
+
+    #[msg("Invalid Merkle tree address")]
+    InvalidTree,
 }

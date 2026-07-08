@@ -1,0 +1,16 @@
+{
+  "name": "Solana NFT Marketplace #3",
+  "symbol": "SNFT",
+  "description": "A production-grade NFT from our marketplace",
+  "image": "3.png",
+  "attributes": [
+    { "trait_type": "Background", "value": "Color 3" },
+    { "trait_type": "Rarity", "value": "Common" }
+  ],
+  "properties": {
+    "files": [
+      { "uri": "3.png", "type": "image/png" }
+    ],
+    "category": "image"
+  }
+}

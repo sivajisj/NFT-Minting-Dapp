@@ -1,0 +1,2 @@
+{"v":0,"name":"sugar","msg":"Lend me some sugar, I am your neighbor.","level":30,"hostname":"codespaces-b2207a","pid":20189,"time":"2026-06-30T09:14:41.245454342Z","target":"sugar","line":124,"file":"src/main.rs"}
+{"v":0,"name":"sugar","msg":"Assets directory is missing or empty.","level":30,"hostname":"codespaces-b2207a","pid":20189,"time":"2026-06-30T09:14:41.245608539Z","target":"sugar_cli::validate::process","line":33,"file":"src/validate/process.rs"}
