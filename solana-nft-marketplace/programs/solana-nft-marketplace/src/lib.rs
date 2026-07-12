@@ -14,6 +14,7 @@ use anchor_spl::{
     },
     token::{self, Mint, Token, TokenAccount},
 };
+
 use mpl_bubblegum::{
     instructions::MintToCollectionV1CpiBuilder,
     types::{
@@ -392,7 +393,95 @@ pub mod solana_nft_marketplace {
 
         Ok(())
     }
+    ///Transfer a cNFT to a new owner
+  /// Transfers a compressed NFT to a new owner.
+pub fn transfer_compressed_nft<'a>(
+    ctx: Context<'a, TransferCompressedNft<'a>>,
+    root: [u8; 32],
+    data_hash: [u8; 32],
+    creator_hash: [u8; 32],
+    nonce: u64,
+    index: u32,
+) -> Result<()> {
+    let proof_accounts = ctx.remaining_accounts;
+
+    mpl_bubblegum::instructions::TransferCpiBuilder::new(
+        &ctx.accounts.bubblegum_program.to_account_info(),
+    )
+    .tree_config(&ctx.accounts.tree_config.to_account_info())
+    .leaf_owner(&ctx.accounts.leaf_owner.to_account_info(), true)
+    .leaf_delegate(&ctx.accounts.leaf_owner.to_account_info(), false)
+    .new_leaf_owner(&ctx.accounts.new_leaf_owner.to_account_info())
+    .merkle_tree(&ctx.accounts.merkle_tree.to_account_info())
+    .log_wrapper(&ctx.accounts.log_wrapper.to_account_info())
+    .compression_program(&ctx.accounts.compression_program.to_account_info())
+    .system_program(&ctx.accounts.system_program.to_account_info())
+    .root(root)
+    .data_hash(data_hash)
+    .creator_hash(creator_hash)
+    .nonce(nonce)
+    .index(index)
+    .add_remaining_accounts(
+        &proof_accounts
+            .iter()
+            .map(|a| (a, false, false))
+            .collect::<Vec<_>>(),
+    )
+    .invoke()?;
+
+    msg!(
+        "cNFT transferred. From: {}. To: {}.",
+        ctx.accounts.leaf_owner.key(),
+        ctx.accounts.new_leaf_owner.key()
+    );
+
+    Ok(())
 }
+
+/// Burns a compressed NFT permanently.
+pub fn burn_compressed_nft<'a>(
+    ctx: Context<'a, BurnCompressedNft<'a>>,
+    root: [u8; 32],
+    data_hash: [u8; 32],
+    creator_hash: [u8; 32],
+    nonce: u64,
+    index: u32,
+) -> Result<()> {
+    let proof_accounts = ctx.remaining_accounts;
+
+    mpl_bubblegum::instructions::BurnCpiBuilder::new(
+        &ctx.accounts.bubblegum_program.to_account_info(),
+    )
+    .tree_config(&ctx.accounts.tree_config.to_account_info())
+    .leaf_owner(&ctx.accounts.leaf_owner.to_account_info(), true)
+    .leaf_delegate(&ctx.accounts.leaf_owner.to_account_info(), false)
+    .merkle_tree(&ctx.accounts.merkle_tree.to_account_info())
+    .log_wrapper(&ctx.accounts.log_wrapper.to_account_info())
+    .compression_program(&ctx.accounts.compression_program.to_account_info())
+    .system_program(&ctx.accounts.system_program.to_account_info())
+    .root(root)
+    .data_hash(data_hash)
+    .creator_hash(creator_hash)
+    .nonce(nonce)
+    .index(index)
+    .add_remaining_accounts(
+        &proof_accounts
+            .iter()
+            .map(|a| (a, false, false))
+            .collect::<Vec<_>>(),
+    )
+    .invoke()?;
+
+    msg!(
+        "cNFT burned. Owner: {}.",
+        ctx.accounts.leaf_owner.key()
+    );
+
+    Ok(())
+}
+}
+
+
 
 // ────────────────────────────────────────────────
 // Account Contexts
@@ -698,6 +787,79 @@ pub struct MintNft<'info> {
     pub system_program:           Program<'info, System>,
     pub rent:                     Sysvar<'info, Rent>,
 }
+
+#[derive(Accounts)]
+pub struct TransferCompressedNft<'info> {
+    /// Current owner — must sign
+    pub leaf_owner: Signer<'info>,
+
+    /// New owner — receives the cNFT
+    /// CHECK: Any valid pubkey can receive
+    pub new_leaf_owner: UncheckedAccount<'info>,
+
+    /// Bubblegum tree config PDA
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        mut,
+        seeds = [merkle_tree.key().as_ref()],
+        bump,
+        seeds::program = bubblegum_program.key(),
+    )]
+    pub tree_config: UncheckedAccount<'info>,
+
+    /// The Merkle tree account
+    /// CHECK: Validated by SPL Compression
+    #[account(mut)]
+    pub merkle_tree: UncheckedAccount<'info>,
+
+    /// CHECK: Bubblegum program
+    #[account(address = mpl_bubblegum::ID)]
+    pub bubblegum_program: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Noop for logging
+    pub log_wrapper: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Account Compression
+    pub compression_program: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+    // remaining_accounts: proof hashes as AccountMeta
+}
+
+#[derive(Accounts)]
+pub struct BurnCompressedNft<'info> {
+    /// Current owner — must sign
+    pub leaf_owner: Signer<'info>,
+
+    /// Bubblegum tree config PDA
+    /// CHECK: Validated by Bubblegum
+    #[account(
+        mut,
+        seeds = [merkle_tree.key().as_ref()],
+        bump,
+        seeds::program = bubblegum_program.key(),
+    )]
+    pub tree_config: UncheckedAccount<'info>,
+
+    /// The Merkle tree account
+    /// CHECK: Validated by SPL Compression
+    #[account(mut)]
+    pub merkle_tree: UncheckedAccount<'info>,
+
+    /// CHECK: Bubblegum program
+    #[account(address = mpl_bubblegum::ID)]
+    pub bubblegum_program: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Noop
+    pub log_wrapper: UncheckedAccount<'info>,
+
+    /// CHECK: SPL Account Compression
+    pub compression_program: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+    // remaining_accounts: proof hashes as AccountMeta
+}
+
 
 // ────────────────────────────────────────────────
 // Account Structs
